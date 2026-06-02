@@ -160,6 +160,8 @@
 - **单引号/大写查词失败引发服务端 SQL 故障与查空问题**：用户反馈部分带单引号（如 don't）的词输入后导致 SQL 语句发生 SyntaxError 语法解析异常而崩溃。且大写词汇在小写词典里直接返回查不到。已通过改为参数化绑定与 `COLLATE NOCASE` 大小写折叠完美解决。
 - **grep_search 外部命令缺失报错**：在 Windows 运行 `grep_search` 时遇到 `exec: "grep": executable file not found in %PATH%` 报错。已改用 `python` 单行脚本检索行号与位置，避免了外部依赖。
 - **GitHub Actions v3 废弃警告导致构建失败**：GitHub 官方因安全策略逐步停用 v3 版本的 artifact 上传 API，导致流程无法跑通。已将 workflow 依赖项全面迭代升级：checkout -> v4，setup-python -> v5，upload-artifact -> v4，gh-release -> v2，保证工作流在最新标准下顺利执行。
+- **打包为单 EXE 后系统托盘图标不显示**：由于 `pystray` 和 `pillow` 在原代码中属于局部导入（定义在 `setup_tray` 函数中），PyInstaller 在进行打包时未能静态分析探测到这些依赖导致它们未被塞入 EXE。并且在使用 Tkinter 选择文件时，由于仅调用 `withdraw` 而未 `destroy`，占用了 Windows 主线程的消息序列并与 pystray 的 win32 消息循环发生冲突阻断了图标创建。已将依赖包导入移至顶层，并在 `filedialog.askopenfilename` 后显式调用 `root.destroy()`，成功使托盘恢复正常呈现。
+
 
 
 ## 关联映射

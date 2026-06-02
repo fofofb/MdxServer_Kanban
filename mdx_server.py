@@ -21,6 +21,16 @@ from mdict_query import IndexBuilder
 import db
 import json
 
+# 尝试全局导入系统托盘依赖，确保 PyInstaller 能进行静态依赖分析并打包进 EXE
+try:
+    import pystray
+    from pystray import MenuItem as item
+    from PIL import Image, ImageDraw
+    import webbrowser
+    HAS_TRAY = True
+except ImportError:
+    HAS_TRAY = False
+
 """
 browser URL:
 http://localhost:8000/test
@@ -222,12 +232,7 @@ def loop():
 
 
 def setup_tray(dict_name):
-    try:
-        import pystray
-        from pystray import MenuItem as item
-        from PIL import Image, ImageDraw
-        import webbrowser
-    except ImportError:
+    if not HAS_TRAY:
         raise RuntimeError("Missing pystray or pillow library for system tray icon.")
 
     def on_open_web(icon, item):
@@ -279,6 +284,7 @@ if __name__ == '__main__':
         root = tk.Tk()
         root.withdraw()
         args.filename = filedialog.askopenfilename(parent=root)
+        root.destroy()  # 必须彻底销毁释放 Tkinter 的窗口，避免其 COM 线程与 pystray 的 win32 消息循环冲突导致托盘不显示
 
     if not os.path.exists(args.filename):
         print("Please specify a valid MDX/MDD file")
