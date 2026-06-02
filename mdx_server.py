@@ -22,6 +22,7 @@ import db
 import json
 
 # 尝试全局导入系统托盘依赖，确保 PyInstaller 能进行静态依赖分析并打包进 EXE
+TRAY_IMPORT_ERROR = None
 try:
     import pystray
     import pystray._win32  # 显式导入 win32 backend，防止 PyInstaller 动态加载丢失它
@@ -30,6 +31,8 @@ try:
     import webbrowser
     HAS_TRAY = True
 except ImportError:
+    import traceback
+    TRAY_IMPORT_ERROR = traceback.format_exc()
     HAS_TRAY = False
 
 """
@@ -234,7 +237,7 @@ def loop():
 
 def setup_tray(dict_name):
     if not HAS_TRAY:
-        raise RuntimeError("Missing pystray or pillow library for system tray icon.")
+        raise RuntimeError(f"Missing pystray or pillow library for system tray icon.\n\n[Import error details]:\n{TRAY_IMPORT_ERROR}")
 
     def on_open_web(icon, item):
         webbrowser.open("http://localhost:8000/")
@@ -302,7 +305,20 @@ if __name__ == '__main__':
         try:
             setup_tray(args.filename)
         except Exception as e:
-            print("System tray initialization skipped/failed: ", e)
+            import traceback
+            err_msg = traceback.format_exc()
+            print("System tray initialization skipped/failed: ", err_msg)
+            try:
+                import tkinter.messagebox as messagebox
+                root_err = tk.Tk()
+                root_err.withdraw()
+                messagebox.showerror(
+                    "系统托盘初始化异常",
+                    f"错误详情:\n{e}\n\n追踪日志:\n{err_msg}\n\n服务已在后台跑起（端口8000可用），但无法显示托盘图标。"
+                )
+                root_err.destroy()
+            except Exception as messagebox_err:
+                print("Failed to show messagebox:", messagebox_err)
             print("Web service is running. Press Ctrl+C in console to exit.")
             import time
             while True:

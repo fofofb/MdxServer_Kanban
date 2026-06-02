@@ -162,6 +162,10 @@
 - **GitHub Actions v3 废弃警告导致构建失败**：GitHub 官方因安全策略逐步停用 v3 版本的 artifact 上传 API，导致流程无法跑通。已将 workflow 依赖项全面迭代升级：checkout -> v4，setup-python -> v5，upload-artifact -> v4，gh-release -> v2，保证工作流在最新标准下顺利执行。
 - **打包为单 EXE 后系统托盘图标不显示**：由于 `pystray` 和 `pillow` 在原代码中属于局部导入（定义在 `setup_tray` 函数中），PyInstaller 在进行打包时未能静态分析探测到这些依赖导致它们未被塞入 EXE。并且在使用 Tkinter 选择文件时，由于仅调用 `withdraw` 而未 `destroy`，占用了 Windows 主线程的消息序列并与 pystray 的 win32 消息循环发生冲突阻断了图标创建。已将依赖包导入移至顶层，并在 `filedialog.askopenfilename` 后显式调用 `root.destroy()`，成功使托盘恢复正常呈现。
 - **pystray 动态加载机制导致 PyInstaller 遗漏打包 win32 托盘后端**：在 Windows 上运行打包的 EXE 后，依然没有看到托盘图标。这是因为 `pystray` 内部使用的是 `importlib.import_module` 来根据系统平台动态加载 `pystray._win32`，这导致 PyInstaller 的静态分析器无法探测并合入该模块，使得打包的 EXE 运行到此抛出 `ImportError: No module named 'pystray._win32'`。已在 `mdx_server.py` 顶层进行了**显式强制导入 `import pystray._win32`**，同时在 `build.yml` 的打包参数中追加了 `--hidden-import="pystray._win32"` 双重确保其被强行塞入 EXE 中，彻底解决了打包后托盘图标无法呈现的深坑。
+- **无法直接排查 EXE 托盘加载失败原因**：由于打包时使用了 `-w` 参数（无命令行窗口），如果托盘模块在运行时发生内部报错而被 silent catch，用户无法通过标准输出得知详细原因，排查极度困难。已在 [mdx_server.py](file:///D:/Users/A/Desktop/mdx-server-master/mdx_server.py#L305-L318) 的异常捕获块中，加入了基于 `tkinter.messagebox` 的可视化报错警告窗。若系统托盘初始化再次由于任何依赖缺失或内部异常崩溃，系统会立即在屏幕上弹窗将堆栈追踪日志（traceback）清晰明了地展示给用户，极大提供了可调试性与故障诊断效率。
+- **无法精准诊断打包后的顶层 ImportError 细节**：在顶层 `try-except` 捕获 `pystray` / `PIL` 导入时直接消除了错误异常栈，致使到了 `setup_tray` 时抛出的 `RuntimeError` 缺少具体的底层加载错误细节。已在顶层捕获时，利用 `traceback.format_exc()` 将真实的 `ImportError` 堆栈详情存入 `TRAY_IMPORT_ERROR` 变量中，并在 `setup_tray` 的异常触发信息中一同抛出显式，彻底打通了从顶层导入捕获到弹窗警告的“全链路错误诊断通道”。
+
+
 
 
 
