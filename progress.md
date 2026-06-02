@@ -1,6 +1,11 @@
 # 项目进度跟踪 (progress.md)
 
 ## 已完成
+- **高颜值系统托盘图标支持 (Headless System Tray Icon)**：
+  - 在 [mdx_server.py](file:///D:/Users/A/Desktop/mdx-server-master/mdx_server.py) 中，使用 `pystray` 与 `pillow` 库为无控制台窗口运行（`-w` 参数打包）实现了一个高品质系统托盘图标。
+  - 托盘图标采用透明背景的靛蓝色渐变书本设计。
+  - 支持右键菜单操作：显示当前加载的词典、一键“打开查词网页”以及安全“退出服务器”并彻底销毁后台 HTTP 监听线程。
+  - 引入了无桌面/无库环境的 `ImportError` 优雅退化技术，如果未安装依赖，则自动转为控制台挂起模式，确保了跨平台最大兼容性。
 - **单文件 EXE 打包路径兼容支持 (PyInstaller Path Compatibility)**：
   - 重构了 [mdx_server.py](file:///D:/Users/A/Desktop/mdx-server-master/mdx_server.py) 中的静态资源和词典目录查找逻辑，支持使用 PyInstaller 的 `--add-data` 打包方式。当被打包成单文件 EXE 后，能够自动通过 `sys._MEIPASS` 动态释放和读取打包进 EXE 内部的 `index.html`、`index.css` 和 `index.js` 静态界面，同时保留在外部同级 `mdx` 目录中定位词典的功能，实现纯单文件分发。
 - **修复看板卡片压缩折叠问题 (Fix Kanban Card Collapsing)**：
@@ -105,6 +110,7 @@
 - `get_url_map()`: 获取 `mdx` 目录下所有可供映射的静态资源路径字典。
 - `application(environ, start_response)`: WSGI 请求处理入口，新增静态资源托管分流，以及生词读写、打分、删除接口。
 - `loop()`: 启动 WSGI 服务器的循环函数。
+- `setup_tray(dict_name)`: 在主线程中初始化并启动系统托盘图标，提供右键展示当前词典、网页查词快捷入口以及退出选项。如果系统缺少 UI 库依赖则优雅降级为终端控制台挂起模式。
 
 ### [mdict_query.py (IndexBuilder 类)](file:///D:/Users/A/Desktop/mdx-server-master/mdict_query.py)
 - `mdx_lookup(keyword)`: 在 sqlite3 构建 of MDX_INDEX 表中检索释义。更新为参数绑定占位符，且在精确匹配查空时，退化为 `COLLATE NOCASE` 忽略大小写再次查询，提高查词健壮性。
@@ -168,6 +174,7 @@
 - `导航 UI -> index.html (在 panel-title-row 添加左右方向 icon 按钮), index.css (编写磨砂自适应 .kanban-nav-btn 样式)`
 - `看板防折叠样式配置 -> index.css (对 .kanban-card, .card-avatar, .card-delete 加上 flex-shrink: 0 从而防压缩折叠)`
 - `单文件打包路径优化 -> mdx_server.py (兼容 sys._MEIPASS 以支持静态资源与外部词典路径隔离定位)`
+- `系统托盘控制 -> mdx_server.py (加入 setup_tray 托盘图标及右键菜单实现), build.yml (升级依赖包 pip install pystray pillow)`
 
 ## 待办/规划中 (Todo List)
 - [ ] **看板性能与虚拟滚动优化**：当看板内单词卡片数量达到成百上千量级时，优化 DOM 渲染性能，考虑引入虚拟列表 (Virtual List) 或按需懒加载机制以确保滚动流畅。

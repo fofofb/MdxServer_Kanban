@@ -221,6 +221,53 @@ def loop():
     httpd.serve_forever()
 
 
+def setup_tray(dict_name):
+    try:
+        import pystray
+        from pystray import MenuItem as item
+        from PIL import Image, ImageDraw
+        import webbrowser
+    except ImportError:
+        raise RuntimeError("Missing pystray or pillow library for system tray icon.")
+
+    def on_open_web(icon, item):
+        webbrowser.open("http://localhost:8000/")
+
+    def on_exit(icon, item):
+        icon.stop()
+        os._exit(0)
+
+    # 动态创建一个 64x64 的精美圆形书本图标
+    width = 64
+    height = 64
+    image = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
+    dc = ImageDraw.Draw(image)
+    # 画 Indigo 渐变圆背景
+    dc.ellipse([2, 2, 62, 62], fill=(99, 102, 241))
+    # 画书本页面
+    dc.rectangle([16, 20, 30, 44], fill=(255, 255, 255))
+    dc.rectangle([34, 20, 48, 44], fill=(255, 255, 255))
+    # 书脊线
+    dc.line([32, 18, 32, 46], fill=(79, 70, 229), width=2)
+    # 书页上的横线，营造字迹效果
+    dc.line([20, 26, 26, 26], fill=(156, 163, 175), width=2)
+    dc.line([20, 32, 26, 32], fill=(156, 163, 175), width=2)
+    dc.line([20, 38, 26, 38], fill=(156, 163, 175), width=2)
+    dc.line([38, 26, 44, 26], fill=(156, 163, 175), width=2)
+    dc.line([38, 32, 44, 32], fill=(156, 163, 175), width=2)
+    dc.line([38, 38, 44, 38], fill=(156, 163, 175), width=2)
+
+    menu = pystray.Menu(
+        item(f'词典: {os.path.basename(dict_name)}', lambda: None, enabled=False),
+        item('打开查词网页', on_open_web, default=True),
+        pystray.Menu.SEPARATOR,
+        item('退出服务器', on_exit)
+    )
+
+    icon = pystray.Icon("mdx_server", image, "MDX Dict Server", menu)
+    icon.run()
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -238,5 +285,22 @@ if __name__ == '__main__':
     else:
         db.init_db()
         builder = IndexBuilder(args.filename)
+        
+        # 1. 以守护线程启动 Web 监听，主线程(托盘)退出时子线程一并销毁
         t = threading.Thread(target=loop, args=())
+        t.daemon = True
         t.start()
+
+        # 2. 启动系统托盘图标
+        try:
+            setup_tray(args.filename)
+        except Exception as e:
+            print("System tray initialization skipped/failed: ", e)
+            print("Web service is running. Press Ctrl+C in console to exit.")
+            import time
+            while True:
+                try:
+                    time.sleep(1)
+                except KeyboardInterrupt:
+                    print("Exiting...")
+                    break
