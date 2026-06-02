@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDX 词典查询系统</title>
+    <!-- 引入 Outfit & Inter 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 外部 CSS 样式 -->
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <!-- 头部 -->
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div>
+                <h1 class="logo-text">MDX Dict Server</h1>
+                <span class="version-badge">v1.0.0</span>
+            </div>
+        </div>
+
+        <!-- 侧边栏导航 -->
+        <div class="sidebar-nav">
+            <button id="navSearch" class="nav-item active">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>查词历史</span>
+            </button>
+            <button id="navKanban" class="nav-item">
+                <i class="fa-solid fa-table-columns"></i>
+                <span>单词看板</span>
+            </button>
+            <button id="navFlashcard" class="nav-item">
+                <i class="fa-solid fa-bolt"></i>
+                <span>闪卡复习</span>
+            </button>
+        </div>
+
+        <!-- 查询历史 -->
+        <div class="history-container" id="historyContainer">
+            <div class="history-header">
+                <span class="history-title">查询历史</span>
+                <button id="clearHistoryBtn" class="clear-btn" title="清空全部历史">
+                    <i class="fa-regular fa-trash-can"></i> 清空
+                </button>
+            </div>
+            <ul id="historyList" class="history-list">
+                <!-- 动态载入历史记录 -->
+            </ul>
+        </div>
+    </aside>
+
+    <!-- 设置抽屉面板 -->
+    <div id="settingsDrawer" class="settings-drawer">
+        <div class="drawer-header">
+            <h3>系统设置</h3>
+            <button id="closeSettingsBtn" class="close-drawer-btn">&times;</button>
+        </div>
+        <div class="drawer-content">
+            <div class="setting-option">
+                <div class="setting-info">
+                    <span class="setting-name">查词自动入生词本</span>
+                    <span class="setting-desc">输入查词释义后，自动在后台记录到单词本中</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chkAutoAdd">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-option">
+                <div class="setting-info">
+                    <span class="setting-name">删除无需确认</span>
+                    <span class="setting-desc">点击单词卡片或释义的删除按钮时，不弹出提示直接移除</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chkDeleteConfirm">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-option">
+                <div class="setting-info">
+                    <span class="setting-name">双击单词查词</span>
+                    <span class="setting-desc">在释义页面中双击任意单词，自动提取并查询该单词</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chkDblClickQuery">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- 划词与发音设置 -->
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--sidebar-border);">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); font-weight: 600; margin-bottom: 12px;">发音与 TTS 设置</div>
+                
+                <div class="setting-option">
+                    <div class="setting-info">
+                        <span class="setting-name">划词发音悬浮框</span>
+                        <span class="setting-desc">划词选择文本后，弹出悬浮发音按钮气泡框</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkSelectionPronounce" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-option">
+                    <div class="setting-info">
+                        <span class="setting-name">划词自动发音</span>
+                        <span class="setting-desc">划词选中后立即自动发音，无需点击播放</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkAutoPronounceOnSelect">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-option">
+                    <div class="setting-info">
+                        <span class="setting-name">查词自动发音</span>
+                        <span class="setting-desc">查询单词释义加载完成后，自动播放发音</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkAutoPronounceOnQuery">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-option">
+                    <div class="setting-info">
+                        <span class="setting-name">闪卡复习自动发音</span>
+                        <span class="setting-desc">闪卡复习单词载入时，自动播放发音</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chkAutoPronounceOnFlashcard">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-select-option" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="setting-name" style="font-size: 13px; font-weight: 500;">发音引擎</span>
+                    </div>
+                    <select id="selTtsEngine" class="settings-select" style="width: 100%; height: 32px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 6px; padding: 0 8px; outline: none; font-size: 12px; font-family: inherit;">
+                        <option value="natural">Natural TTS (云端语音)</option>
+                        <option value="local">Speech Synthesis (本地系统)</option>
+                    </select>
+                </div>
+
+                <div id="naturalVoiceSettings">
+                    <div class="setting-select-option" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span class="setting-name" style="font-size: 13px; font-weight: 500;">英文发音人</span>
+                        </div>
+                        <select id="selVoiceEn" class="settings-select" style="width: 100%; height: 32px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 6px; padding: 0 8px; outline: none; font-size: 12px; font-family: inherit;">
+                            <!-- 动态加载云端英文音色 -->
+                        </select>
+                    </div>
+                    
+                    <div class="setting-select-option" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span class="setting-name" style="font-size: 13px; font-weight: 500;">中文发音人</span>
+                        </div>
+                        <select id="selVoiceZh" class="settings-select" style="width: 100%; height: 32px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 6px; padding: 0 8px; outline: none; font-size: 12px; font-family: inherit;">
+                            <!-- 动态加载云端中文音色 -->
+                        </select>
+                    </div>
+                </div>
+
+                <div id="localVoiceSettings" style="display: none;">
+                    <div class="setting-select-option" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span class="setting-name" style="font-size: 13px; font-weight: 500;">本地发音角色</span>
+                        </div>
+                        <select id="selLocalVoice" class="settings-select" style="width: 100%; height: 32px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); border-radius: 6px; padding: 0 8px; outline: none; font-size: 12px; font-family: inherit;">
+                            <!-- 动态加载本地 SpeechSynthesis 角色 -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-slider-option" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="setting-name" style="font-size: 13px; font-weight: 500;">发音语速</span>
+                        <span id="lblTtsRate" style="font-size: 11px; color: var(--text-secondary);">1.0x</span>
+                    </div>
+                    <input type="range" id="rngTtsRate" min="0.5" max="2.0" step="0.1" value="1.0" style="width: 100%; accent-color: var(--accent-color); cursor: pointer; height: 6px; background: var(--slider-bg); border-radius: 3px; outline: none; border: none; margin-top: 4px;">
+                </div>
+                
+                <button id="btnTestTts" class="toolbar-btn" style="width: 100%; justify-content: center; height: 32px; margin-top: 8px;"><i class="fa-solid fa-volume-high"></i> 测试发音</button>
+            </div>
+
+            <!-- 单词管理导入导出 (放入设置里面) -->
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--sidebar-border);">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); font-weight: 600; margin-bottom: 12px;">单词数据管理</div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btnImport" class="toolbar-btn" style="flex: 1; justify-content: center; height: 36px;" title="导入单词本 (TXT一行一词)"><i class="fa-solid fa-file-import"></i> 导入生词</button>
+                    <button id="btnExport" class="toolbar-btn" style="flex: 1; justify-content: center; height: 36px;" title="导出生词本 (TXT一行一词)"><i class="fa-solid fa-file-export"></i> 导出词本</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 隐式文件上传 input -->
+    <input type="file" id="fileImporter" style="display: none;" accept=".txt">
+
+    <!-- 右侧展示区域 -->
+    <main class="main-content">
+        <!-- 全局顶部页眉 -->
+        <header class="global-header" id="globalHeader">
+            <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+                <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="折叠/展开侧边栏">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" class="search-input" placeholder="输入单词进行查询..." autocomplete="off" spellcheck="false">
+                    <button id="searchBtn" class="search-btn" title="查询">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 评分与生词管理面板 (评分放在查词框同一行，节省高度) -->
+            <div id="wordReviewPanel" class="review-panel" style="display: none; align-items: center; gap: 12px; padding: 4px 16px; border-radius: 30px; height: 40px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="currentWordDisplay" style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Word</span>
+                    <span id="wordStatusBadge" class="word-badge" style="display: none;">NEW</span>
+                </div>
+                <button id="addWordBtn" class="btn-add-word" style="height: 28px; line-height: 28px; padding: 0 12px; display: flex; align-items: center;"><i class="fa-solid fa-plus"></i> 加入生词本</button>
+                <div id="scoreSection" style="display: none; align-items: center; gap: 8px;">
+                    <span class="review-title" style="font-size: 11px;">评分:</span>
+                    <div class="review-btns">
+                        <button class="btn-score btn-score-1" data-score="1" title="忘记 (Again) - 1分钟后复习">Again</button>
+                        <button class="btn-score btn-score-2" data-score="2" title="模糊 (Hard) - 5分钟后复习">Hard</button>
+                        <button class="btn-score btn-score-3" data-score="3" title="认识 (Good) - 15分钟/半天后复习">Good</button>
+                        <button class="btn-score btn-score-4" data-score="4" title="熟练 (Easy) - 1天后复习">Easy</button>
+                        <button class="btn-score btn-score-5" data-score="5" title="完美 (Perfect) - 4天后复习">Perfect</button>
+                    </div>
+                    <span id="nextReviewDisplay" style="font-size: 11px; color: var(--text-secondary); margin-left: 4px;"></span>
+                </div>
+            </div>
+
+            <!-- 右侧动作按钮区 (包含 iframe 刷新/关闭，以及主题/设置) -->
+            <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
+                <!-- Iframe Actions (Refresh, New Window, Close) -->
+                <div id="iframeActions" style="display: none; align-items: center; gap: 6px; margin-right: 8px; border-right: 1px solid var(--sidebar-border); padding-right: 8px;">
+                    <button id="refreshBtn" class="sidebar-toggle-btn" title="重新载入">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button id="newTabBtn" class="sidebar-toggle-btn" title="在新标签页打开">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </button>
+                    <button id="closeBtn" class="sidebar-toggle-btn close-btn" title="返回欢迎页面">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <button id="themeToggle" class="sidebar-toggle-btn" title="切换显示主题">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button id="btnSettings" class="sidebar-toggle-btn" title="系统设置">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 欢迎界面 -->
+        <div id="welcomeScreen" class="welcome-container">
+            <div class="welcome-card">
+                <div class="welcome-icon-wrapper">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2 class="welcome-title">欢迎使用 MDX 字典查询</h2>
+                <p class="welcome-desc">在顶部搜索框中输入单词，或者点击历史记录进行查询。我们将直接从您的词典数据库中提取释义，并在右侧框架中完整为您呈现。</p>
+                <div class="shortcuts">
+                    <span>快捷查词: <kbd class="shortcut-key">Enter</kbd></span>
+                    <span>聚焦输入框: <kbd class="shortcut-key">/</kbd></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示框架 -->
+        <div id="iframeContainer" class="iframe-container">
+            <!-- 加载过渡 -->
+            <div id="loaderOverlay" class="loader-overlay">
+                <div class="spinner"></div>
+            </div>
+
+            <iframe id="resultIframe" class="result-iframe" name="result-iframe"></iframe>
+        </div>
+
+        <!-- 看板视图容器 -->
+        <div id="kanbanContainer" class="kanban-container">
+            <div class="kanban-header">
+                <div class="kanban-title-group">
+                    <h2>单词管理看板</h2>
+                    <p>通过拖拽卡片调整复习阶段，点击单词进行查词释义，支持精确到分钟的遗忘倒计时。</p>
+                </div>
+            </div>
+            
+            <div class="kanban-layout-wrapper">
+                <div class="kanban-board">
+                    <!-- 新词列 -->
+                    <div class="kanban-column" data-status="new">
+                        <div class="column-header">
+                            <span class="column-title"><i class="fa-solid fa-star" style="color: #6366f1;"></i> 待学习 (New)</span>
+                            <span class="column-count" id="countNew">0</span>
+                        </div>
+                        <div class="card-list" id="listNew">
+                            <!-- 卡片加载 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 学习中列 -->
+                    <div class="kanban-column" data-status="learning">
+                        <div class="column-header">
+                            <span class="column-title"><i class="fa-solid fa-graduation-cap" style="color: #f59e0b;"></i> 学习中 (Learning)</span>
+                            <span class="column-count" id="countLearning">0</span>
+                        </div>
+                        <div class="card-list" id="listLearning">
+                            <!-- 卡片加载 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 已掌握列 -->
+                    <div class="kanban-column" data-status="mastered">
+                        <div class="column-header">
+                            <span class="column-title"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 已掌握 (Mastered)</span>
+                            <span class="column-count" id="countMastered">0</span>
+                        </div>
+                        <div class="card-list" id="listMastered">
+                            <!-- 卡片加载 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 看板单词释义详情面板 (不跳转直接看) -->
+                <div id="kanbanDetailPanel" class="kanban-detail-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-row">
+                            <div class="panel-title-left" style="display: flex; align-items: center; gap: 12px;">
+                                <span id="kanbanDetailWord">Word</span>
+                                <div class="kanban-nav-btns" style="display: flex; gap: 4px;">
+                                    <button id="kanbanPrevBtn" class="kanban-nav-btn" title="上一个单词 (左方向键)"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <button id="kanbanNextBtn" class="kanban-nav-btn" title="下一个单词 (右方向键)"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <button id="closeKanbanDetailBtn" class="close-panel-btn" title="关闭释义"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <!-- 看板详情评分 -->
+                        <div id="kanbanWordReview" class="review-panel" style="display: flex; align-items: center; gap: 8px; border-radius: 12px; padding: 6px 12px; height: auto; border: 1px solid var(--review-panel-border); background: var(--review-panel-bg);">
+                            <span class="review-title" style="font-size: 11px;">掌握度评分:</span>
+                            <div class="review-btns" style="display: flex; gap: 4px;">
+                                <button class="btn-score btn-score-1" data-score="1" data-kanban-score="true" title="Again" style="font-size: 11px; padding: 4px 8px; height: 26px;">Again</button>
+                                <button class="btn-score btn-score-2" data-score="2" data-kanban-score="true" title="Hard" style="font-size: 11px; padding: 4px 8px; height: 26px;">Hard</button>
+                                <button class="btn-score btn-score-3" data-score="3" data-kanban-score="true" title="Good" style="font-size: 11px; padding: 4px 8px; height: 26px;">Good</button>
+                                <button class="btn-score btn-score-4" data-score="4" data-kanban-score="true" title="Easy" style="font-size: 11px; padding: 4px 8px; height: 26px;">Easy</button>
+                                <button class="btn-score btn-score-5" data-score="5" data-kanban-score="true" title="Perfect" style="font-size: 11px; padding: 4px 8px; height: 26px;">Perfect</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <iframe id="kanbanDetailIframe" class="kanban-detail-iframe" name="kanban-detail-iframe"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 闪卡复习视图容器 -->
+        <div id="flashcardContainer" class="flashcard-container">
+            <!-- 闪卡设置界面 -->
+            <div id="flashcardStartArea" class="flashcard-start-area">
+                <div class="welcome-card" style="max-width: 440px; animation: none;">
+                    <div class="welcome-icon-wrapper" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h2 class="welcome-title">开始闪卡复习</h2>
+                    <p class="welcome-desc">利用间隔重复系统，快速翻转卡片进行记忆测试。空格翻牌，数字键评分。</p>
+                    
+                    <div class="flashcard-options">
+                        <div class="option-row">
+                            <span class="option-label">复习范围:</span>
+                            <select id="selCardScope" class="select-field">
+                                <option value="due">仅待复习 (已到期)</option>
+                                <option value="all">所有生词</option>
+                            </select>
+                        </div>
+                        <div class="option-row">
+                            <span class="option-label">复习数量:</span>
+                            <select id="selCardCount" class="select-field">
+                                <option value="10">一组 10 个</option>
+                                <option value="20" selected>一组 20 个</option>
+                                <option value="50">一组 50 个</option>
+                                <option value="all">全部单词</option>
+                            </select>
+                        </div>
+                        <div class="option-row">
+                            <span class="option-label">乱序测试:</span>
+                            <label class="switch">
+                                <input type="checkbox" id="chkCardShuffle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button id="btnStartReview" class="btn-add-word" style="width: 100%; padding: 12px; font-size: 13px; margin-top: 12px;"><i class="fa-solid fa-play"></i> 开启极速挑战</button>
+                </div>
+            </div>
+            
+            <!-- 闪卡测试区 -->
+            <div id="flashcardPlayArea" class="flashcard-play-area" style="display: none;">
+                <!-- 顶部进度与返回 -->
+                <div class="play-header">
+                    <button id="btnExitReview" class="toolbar-btn close-btn" title="退出复习"><i class="fa-solid fa-xmark"></i> 退出</button>
+                    <div class="progress-container">
+                        <span id="lblProgress">0 / 0</span>
+                        <div class="progress-track">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+                
+                <!-- 3D 翻转卡片 -->
+                <div class="flip-card-wrapper" id="flipCardWrapper">
+                    <div class="flip-card" id="flipCard">
+                        <!-- 卡片正面 -->
+                        <div class="card-front">
+                            <div class="front-glow"></div>
+                            <span class="front-word" id="frontWordText">Word</span>
+                            <span class="front-hint">按 Space (空格键) 或点击卡片翻面</span>
+                        </div>
+                        <!-- 卡片背面 -->
+                        <div class="card-back">
+                            <iframe id="backIframe" class="result-iframe" name="back-iframe"></iframe>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 评分按钮 -->
+                <div class="play-controls" style="margin-top: 15px;">
+                    <div id="playScorePanel" class="review-panel" style="display: none; align-items: center; justify-content: center; gap: 8px;">
+                        <span class="review-title">掌握度评分:</span>
+                        <div class="review-btns">
+                            <button class="btn-score btn-score-1" data-score="1" data-play-score="true" title="忘记 (Again) - [键盘 1]">Again</button>
+                            <button class="btn-score btn-score-2" data-score="2" data-play-score="true" title="模糊 (Hard) - [键盘 2]">Hard</button>
+                            <button class="btn-score btn-score-3" data-score="3" data-play-score="true" title="认识 (Good) - [键盘 3]">Good</button>
+                            <button class="btn-score btn-score-4" data-score="4" data-play-score="true" title="熟练 (Easy) - [键盘 4]">Easy</button>
+                            <button class="btn-score btn-score-5" data-score="5" data-play-score="true" title="完美 (Perfect) - [键盘 5]">Perfect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 闪卡复习结果展示区 -->
+            <div id="flashcardResultArea" class="flashcard-result-area" style="display: none;">
+                <div class="welcome-card" style="max-width: 440px; animation: none;">
+                    <div class="welcome-icon-wrapper" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="welcome-title">复习挑战完成！</h2>
+                    <p class="welcome-desc" id="lblResultDesc">恭喜！您已背完本次计划的单词。</p>
+                    <button id="btnFinishReview" class="btn-add-word" style="width: 100%; padding: 12px; font-size: 13px; margin-top: 12px;"><i class="fa-solid fa-check"></i> 结束复习</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 发音与划词悬浮气泡框 -->
+    <div id="speechBubble" class="speech-bubble" style="display: none;">
+        <button id="bubblePlayBtn" class="bubble-btn" title="播放选中文本发音">
+            <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button id="bubbleAddWordBtn" class="bubble-btn" title="将选中文词加入生词本">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        <span class="bubble-divider"></span>
+        <span id="bubbleTextPreview" class="bubble-text-preview">选中文本</span>
+    </div>
+
+    <!-- 外部 JavaScript 逻辑 -->
+    <script src="/index.js"></script>
+</body>
+</html>

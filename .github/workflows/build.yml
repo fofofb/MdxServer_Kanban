@@ -1,0 +1,47 @@
+name: Build and Release Standalone EXE
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送版本标签 (例如 v1.0.0) 时触发 Release 自动编译与发布
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Compile Standalone EXE
+      run: |
+        pyinstaller -F -w --name="MDX_Dict_Server" --add-data "index.html;." --add-data "index.css;." --add-data "index.js;." mdx_server.py
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: MDX_Dict_Server_EXE
+        path: dist/MDX_Dict_Server.exe
+
+    - name: Release Standalone EXE
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: dist/MDX_Dict_Server.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
