@@ -14,10 +14,10 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -31,13 +31,13 @@ jobs:
         pyinstaller -F -w --name="MDX_Dict_Server" --add-data "index.html;." --add-data "index.css;." --add-data "index.js;." mdx_server.py
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: MDX_Dict_Server_EXE
         path: dist/MDX_Dict_Server.exe
 
     - name: Release Standalone EXE
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: dist/MDX_Dict_Server.exe

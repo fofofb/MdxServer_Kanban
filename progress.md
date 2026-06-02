@@ -153,6 +153,8 @@
 - **lemma.py 文件编译发生语法错误 (SyntaxError)**：在执行 py_compile 命令验证代码编译时，发现 `lemma.py` 使用了 Python 2.x 的 `print "..."` 语法，导致 Python 3.x 抛出缺少括号错误。由于该文件为系统自带的兼容处理脚本且在此之前已能跑通主业务，本次主要在 HTML/CSS/JS 前端层面实现发音，因此不对该旧代码执行修正。
 - **单引号/大写查词失败引发服务端 SQL 故障与查空问题**：用户反馈部分带单引号（如 don't）的词输入后导致 SQL 语句发生 SyntaxError 语法解析异常而崩溃。且大写词汇在小写词典里直接返回查不到。已通过改为参数化绑定与 `COLLATE NOCASE` 大小写折叠完美解决。
 - **grep_search 外部命令缺失报错**：在 Windows 运行 `grep_search` 时遇到 `exec: "grep": executable file not found in %PATH%` 报错。已改用 `python` 单行脚本检索行号与位置，避免了外部依赖。
+- **GitHub Actions v3 废弃警告导致构建失败**：GitHub 官方因安全策略逐步停用 v3 版本的 artifact 上传 API，导致流程无法跑通。已将 workflow 依赖项全面迭代升级：checkout -> v4，setup-python -> v5，upload-artifact -> v4，gh-release -> v2，保证工作流在最新标准下顺利执行。
+
 
 ## 关联映射
 - `发音气泡及 TTS 设置 -> index.html (追加发音设置项与划词悬浮 DOM 元素)`
