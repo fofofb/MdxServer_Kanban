@@ -24,6 +24,7 @@ import json
 # 尝试全局导入系统托盘依赖，确保 PyInstaller 能进行静态依赖分析并打包进 EXE
 try:
     import pystray
+    import pystray._win32  # 显式导入 win32 backend，防止 PyInstaller 动态加载丢失它
     from pystray import MenuItem as item
     from PIL import Image, ImageDraw
     import webbrowser

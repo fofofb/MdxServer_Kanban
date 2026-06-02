@@ -28,7 +28,7 @@ jobs:
 
     - name: Compile Standalone EXE
       run: |
-        pyinstaller -F -w --name="MDX_Dict_Server" --add-data "index.html;." --add-data "index.css;." --add-data "index.js;." mdx_server.py
+        pyinstaller -F -w --name="MDX_Dict_Server" --hidden-import="pystray._win32" --add-data "index.html;." --add-data "index.css;." --add-data "index.js;." mdx_server.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
